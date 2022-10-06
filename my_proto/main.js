@@ -44,6 +44,8 @@ let multiplier;
 let orbitDir;
 let detonated;
 let nextRocketTicks;
+let nextRocketAngle;
+let nextRocketIndex;
 let rocketFatigue;
 const orbitDist = 12.5;
 
@@ -59,7 +61,15 @@ function update() {
         pos: vec(vec(player.pos).addWithAngle((Math.PI / 2 * i) + Math.PI / 4, orbitDist)).add(0.5, 0.5),
       });
     }
+    nextAsteroidTicks = 0;
+    nextRocketTicks = 0;
+    nextRocketAngle = 0;
+    nextRocketIndex = 0;
+    rocketFatigue = false;
   }
+
+  ++nextAsteroidTicks;
+  ++nextRocketTicks;
   color("black"); // note that in dark theme, black and white are inverted
   char("a", player.pos);
   
@@ -84,6 +94,10 @@ function update() {
   detonated = false;
   // TODO: pop rockets off; cycle ticks to push rockets back into the array; make rocket angles scale to current count of rockets and modulo activeRocket by the rocket count
   // TODO: make next rocket ticks extra long if player has 0 rockets (punish spam)
+if (input.isPressed) {
+  
+}
+
 if (input.isJustReleased && rockets.length > 0) {
   // detonate the active rocket
   play("powerUp");
@@ -110,9 +124,10 @@ if (explosion != null) {
   }
 }
 
+  // manage rocket array
   let currRocket = 0;
   remove(rockets, (r) => {
-    r.angle += difficulty * 0.02 * orbitDir;
+    r.angle += difficulty / (difficulty * 0.8) * 0.02 * orbitDir;
     r.pos = vec(vec(player.pos).addWithAngle((r.angle * Math.PI / 2) + Math.PI / 4, orbitDist)).add(0.5, 0.5);
     // draw rockets
     color(currRocket == 0 ? "cyan" : "black");
@@ -124,6 +139,23 @@ if (explosion != null) {
     }
     ++currRocket;
   });
+  if (rockets.length == 0) {
+    if (!rocketFatigue) nextRocketTicks /= 2;
+    rocketFatigue = true;
+  }
+  nextRocketAngle += difficulty / (difficulty * 0.8) * 0.02 * orbitDir;
+  if (nextRocketTicks > (rocketFatigue ? 100 : 60) && rockets.length < 4)
+  {
+    rocketFatigue = false;
+    nextRocketTicks = 0;
+    rockets.push({
+      angle: (nextRocketIndex + nextRocketAngle),
+      pos: vec(vec(player.pos).addWithAngle((Math.PI / 2 * nextRocketIndex) + Math.PI / 4, orbitDist)).add(0.5, 0.5),
+    });
+
+    ++nextRocketIndex;
+    nextRocketIndex %= 4;
+  }
 }
 
 addEventListener("load", onLoad);
