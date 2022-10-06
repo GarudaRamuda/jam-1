@@ -94,37 +94,45 @@ function update() {
   // apply friction
   player.vel.mul(0.945);
   detonated = false;
-if (input.isPressed) {
-  orbitScale = Math.max(orbitScale * 0.975, 0.5);
-} else {
-  orbitScale = Math.min(orbitScale / 0.95, 1);
-}
 
-if (input.isJustReleased && rockets.length > 0) {
-  // detonate the active rocket
-  play("powerUp");
-  const r = rockets[0];
-  explosion = {pos: r.pos, ticks: 0}
-  color("light_yellow");
-  particle(explosion.pos, 18, 2.2, rnd(4));
-  const d = r.pos.distanceTo(player.pos);
-  const a = r.pos.angleTo(player.pos);
-  player.vel.addWithAngle(a, 17 / d);
-  orbitDir *= -1;
-  detonated = true;
-}
-
-if (explosion != null) {
-  ++(explosion.ticks);
-  let r = Math.sin(explosion.ticks * 0.2) * 4;
-  if (r < 0) {
-    explosion = undefined;
+  // pull rockets inward
+  if (input.isPressed) {
+    orbitScale = Math.max(orbitScale * 0.975, 0.5);
   } else {
-    r = r*r;
-    color("light_red");
-    arc(explosion.pos, r);
+    orbitScale = Math.min(orbitScale / 0.95, 1);
   }
-}
+
+  if (input.isJustReleased && rockets.length > 0) {
+    // detonate the active rocket
+    play("powerUp");
+    const r = rockets[0];
+    explosion = {pos: r.pos, ticks: 0}
+    color("light_yellow");
+    particle(explosion.pos, 18, 2.2, rnd(4));
+
+    // boost player away from explosion origin
+    const d = r.pos.distanceTo(player.pos);
+    const a = r.pos.angleTo(player.pos);
+    player.vel.addWithAngle(a, 17 / d);
+
+    // flip orbit
+    orbitDir *= -1;
+    detonated = true;
+  }
+
+  // draw explosion
+  if (explosion != null) {
+    ++(explosion.ticks);
+    // math wizardry to give a nice curve to the arc's scaling
+    let r = Math.sin(explosion.ticks * 0.2) * 4;
+    if (r < 0) {
+      explosion = undefined;
+    } else {
+      r = r*r;
+      color("light_red");
+      arc(explosion.pos, r);
+    }
+  }
 
   // manage rocket array
   let currRocket = 0;
@@ -135,6 +143,8 @@ if (explosion != null) {
     // draw rockets
     color(currRocket == 0 ? "cyan" : "black");
     box(r.pos, 3);
+
+    // delete consumed rockets
     if (currRocket == 0 && detonated) {
       detonated = false;
       --currRocket;
@@ -142,10 +152,14 @@ if (explosion != null) {
     }
     ++currRocket;
   });
+
+  // punish player for spamming rockets
   if (rockets.length == 0) {
     if (!rocketFatigue) nextRocketTicks /= 2;
     rocketFatigue = true;
   }
+
+  // respawn rockets
   nextRocketAngle += angleStep;
   if (nextRocketTicks > (rocketFatigue ? 100 : 60) && rockets.length < 4)
   {
