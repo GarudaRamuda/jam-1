@@ -41,6 +41,7 @@ let asteroids;
 let nextAsteroidTicks;
 let nextAsteroidAxis;
 let multiplier;
+let multiplierDecayTicks;
 let orbitDir;
 let detonated;
 let nextRocketTicks;
@@ -48,14 +49,16 @@ let nextRocketAngle;
 let nextRocketIndex;
 let rocketFatigue;
 let orbitScale;
-const orbitDist = 12.5;
+const orbitDist = 15.5;
 
 function update() {
   
   if (!ticks) {
+    multiplier = difficulty;
     orbitDir = 1;
     orbitScale = 1;
     player = {pos: vec(50, 50), vel: vec(0, 0) };
+
     rockets = [];
     for (i = 0; i < 4; i++) {
       rockets.push({
@@ -63,6 +66,10 @@ function update() {
         pos: vec(player.pos).addWithAngle((Math.PI / 2 * i) + Math.PI / 4, orbitDist * orbitScale),
       });
     }
+
+    asteroids = [];
+
+    multiplierDecayTicks = 0;
     nextAsteroidTicks = 0;
     nextRocketTicks = 0;
     nextRocketAngle = 0;
@@ -70,8 +77,10 @@ function update() {
     rocketFatigue = false;
   }
 
+  ++multiplierDecayTicks;
   ++nextAsteroidTicks;
   if (rockets.length < 4) ++nextRocketTicks;
+
   color("black"); // note that in dark theme, black and white are inverted
   char("a", player.pos);
   
@@ -173,6 +182,60 @@ function update() {
     ++nextRocketIndex;
     nextRocketIndex %= 4;
   }
+
+  // manage asteroid array
+  if (nextAsteroidTicks > 60 - difficulty * 5) {
+    nextAsteroidTicks = 0;
+    nextAsteroidAxis = rndi(4);
+    let asteroidPos = vec(0, 0);
+    let asteroidTarget = vec(0, 0);
+    switch(nextAsteroidAxis) {
+      case 0:
+        asteroidPos = vec(asteroidPos).add(rnd(100), 0);
+        asteroidTarget = vec(asteroidTarget).add((rnd(100), 100));
+        break;
+      case 1:
+        asteroidPos = vec(asteroidPos).add(100, rnd(100));
+        asteroidTarget = vec(asteroidTarget).add(0, rnd(100));
+        break;
+      case 2:
+        asteroidPos = vec(asteroidPos).add(rnd(100), 100);
+        asteroidTarget = vec(asteroidTarget).add(rnd(100), 0);
+        break;
+      case 3:
+        asteroidPos = vec(asteroidPos).add(0, rnd(100));
+        asteroidTarget = vec(asteroidTarget).add(100, rnd(100));
+        break;
+      default:
+        break;
+    }
+    asteroids.push({
+      pos: asteroidPos,
+      angle: asteroidPos.angleTo(asteroidTarget),
+      vel: rnd(0.2 + difficulty * 0.05, 0.5 + difficulty * 0.05),
+    });
+  }
+  remove(asteroids, (a) => {
+      a.pos = a.pos.addWithAngle(a.angle, a.vel);
+      color("red");
+      const c = box(a.pos, 5).isColliding;
+      if (c.rect.light_red) {
+        play("coin");
+        addScore(multiplier, a.pos);
+        multiplier *= 1.25;
+        multiplierDecayTicks = 0;
+        return true;
+      } else if (c.char.a) {
+        play("explosion");
+        end();
+      }
+
+      if (a.pos.x < -10 || a.pos.x > 110 || a.pos.y < -10 || a.pos.y > 110) {
+        return true;
+      }
+  });
+
+  if (multiplierDecayTicks > 210) multiplier = difficulty;
 }
 
 addEventListener("load", onLoad);
