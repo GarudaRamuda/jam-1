@@ -105,13 +105,13 @@ function update() {
   detonated = false;
 
   // pull rockets inward
-  if (input.isPressed) {
+  if (input.isPressed && ticks > 30) {
     orbitScale = Math.max(orbitScale * 0.975, 0.5);
   } else {
     orbitScale = Math.min(orbitScale / 0.95, 1);
   }
 
-  if (input.isJustReleased && rockets.length > 0) {
+  if (input.isJustReleased && rockets.length > 0 && ticks > 30) {
     // detonate the active rocket
     play("powerUp");
     const r = rockets[0];
