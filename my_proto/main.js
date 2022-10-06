@@ -37,12 +37,14 @@ let player;
 /** @type {{pos: Vector, ticks: Number}}*/
 let explosion;
 let rockets;
-let activeRocket;
 let asteroids;
 let nextAsteroidTicks;
 let nextAsteroidAxis;
 let multiplier;
 let orbitDir;
+let detonated;
+let nextRocketTicks;
+let rocketFatigue;
 const orbitDist = 12.5;
 
 function update() {
@@ -57,9 +59,8 @@ function update() {
         pos: vec(vec(player.pos).addWithAngle((Math.PI / 2 * i) + Math.PI / 4, orbitDist)).add(0.5, 0.5),
       });
     }
-    activeRocket = 0;
   }
-  color("black");
+  color("black"); // note that in dark theme, black and white are inverted
   char("a", player.pos);
   
   // update pos
@@ -80,22 +81,21 @@ function update() {
     }
   // apply friction
   player.vel.mul(0.95);
-
+  detonated = false;
   // TODO: pop rockets off; cycle ticks to push rockets back into the array; make rocket angles scale to current count of rockets and modulo activeRocket by the rocket count
   // TODO: make next rocket ticks extra long if player has 0 rockets (punish spam)
-if (input.isJustReleased) {
+if (input.isJustReleased && rockets.length > 0) {
   // detonate the active rocket
   play("powerUp");
-  const r = rockets[activeRocket];
+  const r = rockets[0];
   explosion = {pos: r.pos, ticks: 0}
   color("light_yellow");
   particle(explosion.pos, 18, 2.2, rnd(4));
   const d = r.pos.distanceTo(player.pos);
   const a = r.pos.angleTo(player.pos);
   player.vel.addWithAngle(a, 15 / d);
-  ++activeRocket;
-  activeRocket %= rockets.length;
   orbitDir *= -1;
+  detonated = true;
 }
 
 if (explosion != null) {
@@ -115,8 +115,13 @@ if (explosion != null) {
     r.angle += difficulty * 0.02 * orbitDir;
     r.pos = vec(vec(player.pos).addWithAngle((r.angle * Math.PI / 2) + Math.PI / 4, orbitDist)).add(0.5, 0.5);
     // draw rockets
-    color(currRocket == activeRocket ? "cyan" : "black");
+    color(currRocket == 0 ? "cyan" : "black");
     box(r.pos, 3);
+    if (currRocket == 0 && detonated) {
+      detonated = false;
+      --currRocket;
+      return true;
+    }
     ++currRocket;
   });
 }
