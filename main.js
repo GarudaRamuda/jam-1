@@ -27,7 +27,7 @@ rrrl
 ];
 
 options = {
-  theme: "dark",
+  theme: "pixel",
   isPlayingBgm: true,
   isReplayEnabled: true,
 };
