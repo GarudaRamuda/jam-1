@@ -71,7 +71,7 @@ function update() {
   }
 
   ++nextAsteroidTicks;
-  ++nextRocketTicks;
+  if (rockets.length < 4) ++nextRocketTicks;
   color("black"); // note that in dark theme, black and white are inverted
   char("a", player.pos);
   
