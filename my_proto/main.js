@@ -1,4 +1,4 @@
-title = "DODGER";
+title = "R DODGER";
 
 description = `
 [Hold]
@@ -47,18 +47,20 @@ let nextRocketTicks;
 let nextRocketAngle;
 let nextRocketIndex;
 let rocketFatigue;
+let orbitScale;
 const orbitDist = 12.5;
 
 function update() {
   
   if (!ticks) {
     orbitDir = 1;
+    orbitScale = 1;
     player = {pos: vec(50, 50), vel: vec(0, 0) };
     rockets = [];
     for (i = 0; i < 4; i++) {
       rockets.push({
         angle: (i),
-        pos: vec(vec(player.pos).addWithAngle((Math.PI / 2 * i) + Math.PI / 4, orbitDist)).add(0.5, 0.5),
+        pos: vec(player.pos).addWithAngle((Math.PI / 2 * i) + Math.PI / 4, orbitDist * orbitScale),
       });
     }
     nextAsteroidTicks = 0;
@@ -95,7 +97,9 @@ function update() {
   // TODO: pop rockets off; cycle ticks to push rockets back into the array; make rocket angles scale to current count of rockets and modulo activeRocket by the rocket count
   // TODO: make next rocket ticks extra long if player has 0 rockets (punish spam)
 if (input.isPressed) {
-  
+  orbitScale = Math.max(orbitScale * 0.975, 0.5);
+} else {
+  orbitScale = Math.min(orbitScale / 0.95, 1);
 }
 
 if (input.isJustReleased && rockets.length > 0) {
@@ -107,7 +111,7 @@ if (input.isJustReleased && rockets.length > 0) {
   particle(explosion.pos, 18, 2.2, rnd(4));
   const d = r.pos.distanceTo(player.pos);
   const a = r.pos.angleTo(player.pos);
-  player.vel.addWithAngle(a, 15 / d);
+  player.vel.addWithAngle(a, 16 / d);
   orbitDir *= -1;
   detonated = true;
 }
@@ -128,7 +132,7 @@ if (explosion != null) {
   let currRocket = 0;
   remove(rockets, (r) => {
     r.angle += difficulty / (difficulty * 0.8) * 0.02 * orbitDir;
-    r.pos = vec(vec(player.pos).addWithAngle((r.angle * Math.PI / 2) + Math.PI / 4, orbitDist)).add(0.5, 0.5);
+    r.pos = vec(player.pos).addWithAngle((r.angle * Math.PI / 2) + Math.PI / 4, orbitDist * orbitScale);
     // draw rockets
     color(currRocket == 0 ? "cyan" : "black");
     box(r.pos, 3);
@@ -150,7 +154,7 @@ if (explosion != null) {
     nextRocketTicks = 0;
     rockets.push({
       angle: (nextRocketIndex + nextRocketAngle),
-      pos: vec(vec(player.pos).addWithAngle((Math.PI / 2 * nextRocketIndex) + Math.PI / 4, orbitDist)).add(0.5, 0.5),
+      pos: vec(player.pos).addWithAngle((Math.PI / 2 * nextRocketIndex) + Math.PI / 4, orbitDist * orbitScale),
     });
 
     ++nextRocketIndex;
