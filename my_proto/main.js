@@ -92,10 +92,8 @@ function update() {
       player.vel.y *= -0.8;
     }
   // apply friction
-  player.vel.mul(0.95);
+  player.vel.mul(0.945);
   detonated = false;
-  // TODO: pop rockets off; cycle ticks to push rockets back into the array; make rocket angles scale to current count of rockets and modulo activeRocket by the rocket count
-  // TODO: make next rocket ticks extra long if player has 0 rockets (punish spam)
 if (input.isPressed) {
   orbitScale = Math.max(orbitScale * 0.975, 0.5);
 } else {
@@ -111,7 +109,7 @@ if (input.isJustReleased && rockets.length > 0) {
   particle(explosion.pos, 18, 2.2, rnd(4));
   const d = r.pos.distanceTo(player.pos);
   const a = r.pos.angleTo(player.pos);
-  player.vel.addWithAngle(a, 16 / d);
+  player.vel.addWithAngle(a, 17 / d);
   orbitDir *= -1;
   detonated = true;
 }
@@ -130,8 +128,9 @@ if (explosion != null) {
 
   // manage rocket array
   let currRocket = 0;
+  let angleStep = difficulty / (difficulty * 0.8) * 0.02 * orbitDir * Math.min(orbitScale * 1.4, 1);
   remove(rockets, (r) => {
-    r.angle += difficulty / (difficulty * 0.8) * 0.02 * orbitDir;
+    r.angle += angleStep;
     r.pos = vec(player.pos).addWithAngle((r.angle * Math.PI / 2) + Math.PI / 4, orbitDist * orbitScale);
     // draw rockets
     color(currRocket == 0 ? "cyan" : "black");
@@ -147,7 +146,7 @@ if (explosion != null) {
     if (!rocketFatigue) nextRocketTicks /= 2;
     rocketFatigue = true;
   }
-  nextRocketAngle += difficulty / (difficulty * 0.8) * 0.02 * orbitDir;
+  nextRocketAngle += angleStep;
   if (nextRocketTicks > (rocketFatigue ? 100 : 60) && rockets.length < 4)
   {
     rocketFatigue = false;
